@@ -1,1 +1,4 @@
 __pycache__
+venv/
+selectiors.txt
+job_scrape_master.json
