@@ -2,6 +2,12 @@
 
 This Python script automates the process of scraping job postings from Google Jobs based on specified search terms. It leverages the Playwright library to interact with web pages, parse job details, and extract application links.
 
+## TODO
+
+- [ ] Support a list of search terms
+- [ ] Run search terms after each other, just modifying the URL to bypass Captcha
+- [ ] Unify the output for it to be saved in a single JSON file when scraping multiple search terms
+
 ## Features
 
 - Scrapes job postings from Google Jobs.
