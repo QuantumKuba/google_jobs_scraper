@@ -32,12 +32,66 @@ This Python script automates the process of scraping job postings from Google Jo
 
 ## Prerequisites
 
-- Python 3.6+
-- pip (Python package manager)
+- Python 3.9+
+- Poetry (Python dependency manager)
 
 ## Installation
 
-### 1. Clone the Repository
+### Option 1: Using Poetry (Recommended)
+
+Poetry provides better dependency management and virtual environment isolation.
+
+#### 1. Install Poetry
+
+If you don't have Poetry installed, install it first:
+
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+Or on macOS using Homebrew:
+
+```bash
+brew install poetry
+```
+
+#### 2. Clone the Repository
+
+```bash
+git clone https://github.com/axsddlr/google_jobs_scraper.git
+cd google_jobs_scraper
+```
+
+#### 3. Install Dependencies
+
+```bash
+poetry install
+```
+
+This will create a virtual environment and install all dependencies including development tools (pytest, black, flake8).
+
+#### 4. Install Playwright Browsers
+
+```bash
+poetry run playwright install
+```
+
+#### 5. Run the Script
+
+```bash
+poetry run python google_jobs.py
+```
+
+Or activate the virtual environment and run directly:
+
+```bash
+poetry shell
+python google_jobs.py
+```
+
+### Option 2: Using pip (Legacy)
+
+#### 1. Clone the Repository
 
 Start by cloning the repository to your local machine:
 
@@ -48,25 +102,23 @@ cd google_jobs_scraper
 
 Replace `https://github.com/axsddlr/google_jobs_scraper.git` with the actual URL of your repository and `google_jobs_scraper` with the name of the folder where you cloned the repository.
 
-### 2. Create a Virtual Environment (Optional but Recommended)
+#### 2. Create Virtual Environment (Recommended)
 
-It's a good practice to create a virtual environment for Python projects to manage dependencies effectively. Use the following commands to create and activate a virtual environment:
+It's a good practice to create a virtual environment for Python projects to manage dependencies effectively.
 
-- For macOS/Linux:
-
+For macOS/Linux:
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-- For Windows:
-
+For Windows:
 ```bash
 python -m venv venv
 .\venv\Scripts\activate
 ```
 
-### 3. Install Dependencies
+#### 3. Install pip Dependencies
 
 Install the required dependencies using pip:
 
@@ -76,7 +128,7 @@ pip install -r requirements.txt
 
 This command will install all the necessary Python packages listed in `requirements.txt`, including Playwright.
 
-### 4. Install Playwright Browsers
+#### 4. Install Playwright Browsers (pip)
 
 After installing the Playwright package, run the following command to install the required browsers:
 

@@ -1,0 +1,50 @@
+[tool.poetry]
+name = "google-jobs-scraper"
+version = "0.1.0"
+description = "A Python script that automates scraping job postings from Google Jobs"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "google_jobs.py"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+beautifulsoup4 = "^4.13.4"
+lxml = "^5.4.0"
+playwright = "^1.52.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+black = "^23.0.0"
+flake8 = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+google-jobs-scraper = "google_jobs:main"
+scrape = "google_jobs:main"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [".git", "__pycache__", "dist", "build", ".venv"]

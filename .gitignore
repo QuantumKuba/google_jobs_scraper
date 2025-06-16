@@ -1,5 +1,66 @@
-__pycache__
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.pytest_cache/
+.tox/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Project specific files
 selectiors.txt
 job_scrape_master.json
 ignore/
+unified_jobs_scrape.json
+job_scrape_master_*.json
+
+# Environment variables
+.env
+.env.local
