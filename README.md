@@ -100,10 +100,31 @@ python google_jobs.py --search_terms="Your Search Terms" --limit=Number_of_Jobs_
   - Complex combinations: `"data scientist (python OR r OR sql) remote"`
 - `--limit`: Maximum number of jobs to scrape per search term (default: 50)
 - `--is_today`: Optional flag to only scrape jobs posted today
-- `--city_state`: Optional city and state filter (e.g., "New York,NY")
 - `--output_file`: Output filename (default: "unified_jobs_scrape.json")
 
-#### Performance/Timing Parameters (NEW)
+## 🤖 Advanced Stealth Features
+
+This scraper includes advanced bot detection bypass techniques:
+
+### Browser Stealth
+- **Custom Chrome Arguments**: Disables automation indicators and enables realistic browsing
+- **Realistic Headers**: Uses authentic browser headers and user agent strings
+- **JavaScript Stealth**: Removes webdriver properties and automation signatures
+- **Viewport Simulation**: Mimics real screen resolutions and device characteristics
+
+### Human Behavior Simulation
+- **Random Mouse Movements**: Simulates natural cursor movement patterns
+- **Human-like Typing**: Variable typing speeds with occasional "typos" and corrections
+- **Realistic Scrolling**: Natural scroll patterns with random pauses and micro-movements
+- **Smart Delays**: Randomized timing that mimics human reading and interaction patterns
+- **Element Interaction**: Clicks at random positions within elements, includes hover effects
+
+### Session Management
+- **Persistent Sessions**: Keeps the same browser session to avoid repeated bot detection
+- **Cookie Handling**: Properly manages consent dialogs and session cookies
+- **Load State Management**: Waits for proper page loads before continuing
+
+#### Performance/Timing Parameters
 
 - `--job_click_delay`: Delay in seconds between clicking job cards (default: 1.0)
 - `--scroll_delay_min`: Minimum delay in seconds between scrolls (default: 2.0)

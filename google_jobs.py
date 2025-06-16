@@ -39,21 +39,275 @@ class css_selector:
     apply_link_cards = 'span.fQYLde a'  # Updated to match the structure from examples
 
 
-def scroll_element_into_view_and_click(element):
-    # Ensure the element is visible in the viewport
-    element.scroll_into_view_if_needed()
-    # Click the element
-    element.click()
+def scroll_element_into_view_and_click(element, page=None):
+    """
+    Scroll element into view and click with human-like behavior
+    """
+    try:
+        # Ensure the element is visible in the viewport
+        element.scroll_into_view_if_needed()
+        
+        # Add small random delay before clicking
+        time.sleep(random.uniform(0.1, 0.3))
+        
+        # Get element position for more realistic clicking
+        box = element.bounding_box()
+        if box:
+            # Click at a slightly random position within the element
+            x_offset = random.uniform(0.2, 0.8) * box['width']
+            y_offset = random.uniform(0.3, 0.7) * box['height']
+            
+            # Move mouse to element first (more human-like)
+            element.hover()
+            time.sleep(random.uniform(0.05, 0.15))
+            
+            # Click with slight offset from center
+            element.click(position={"x": x_offset, "y": y_offset})
+        else:
+            # Fallback to regular click
+            element.click()
+            
+    except Exception as e:
+        logging.debug(f"Human-like click failed, using fallback: {e}")
+        # Fallback to original click method
+        element.scroll_into_view_if_needed()
+        element.click()
 
 
 def create_browser_context():
     playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(headless=False)
-    context = browser.new_context(
-        user_agent=user_agent, viewport={"width": 1920, "height": 1080}
+    
+    # Launch browser with stealth settings
+    browser = playwright.chromium.launch(
+        headless=False,
+        args=[
+            # Basic stealth args
+            "--no-sandbox",
+            "--disable-blink-features=AutomationControlled",
+            "--disable-dev-shm-usage",
+            "--disable-extensions-file-access-check",
+            "--disable-extensions-http-throttling",
+            "--disable-extensions-https-enforcement",
+            "--disable-features=TranslateUI",
+            "--disable-ipc-flooding-protection",
+            "--disable-renderer-backgrounding",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-client-side-phishing-detection",
+            "--disable-component-extensions-with-background-pages",
+            "--disable-default-apps",
+            "--disable-hang-monitor",
+            "--disable-popup-blocking",
+            "--disable-prompt-on-repost",
+            "--disable-sync",
+            "--disable-web-security",
+            "--enable-automation=false",
+            "--enable-blink-features=IdleDetection",
+            "--no-default-browser-check",
+            "--no-first-run",
+            "--password-store=basic",
+            "--use-mock-keychain",
+            # Memory and performance
+            "--memory-pressure-off",
+            "--max_old_space_size=4096",
+            # User agent and window size
+            "--window-size=1920,1080",
+        ]
     )
-    context.set_default_timeout(20000)
+    
+    # Create context with realistic settings
+    context = browser.new_context(
+        user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        viewport={"width": 1920, "height": 1080},
+        # Realistic browser settings
+        locale="en-US",
+        timezone_id="America/New_York",
+        # Enable JavaScript
+        java_script_enabled=True,
+        # Accept downloads
+        accept_downloads=True,
+        # Realistic screen settings
+        screen={"width": 1920, "height": 1080},
+        # Device scale factor
+        device_scale_factor=1,
+        # Has touch (mobile simulation)
+        has_touch=False,
+        # Mobile simulation
+        is_mobile=False,
+        # Extra HTTP headers
+        extra_http_headers={
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Cache-Control": "max-age=0",
+            "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"macOS"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+        }
+    )
+    
+    # Add stealth scripts on every page
+    context.add_init_script("""
+        // Remove webdriver property
+        Object.defineProperty(navigator, 'webdriver', {
+            get: () => undefined,
+        });
+        
+        // Mock languages and plugins to look more realistic
+        Object.defineProperty(navigator, 'languages', {
+            get: () => ['en-US', 'en'],
+        });
+        
+        Object.defineProperty(navigator, 'plugins', {
+            get: () => [1, 2, 3, 4, 5], // Fake plugin array
+        });
+        
+        // Override the `plugins` property to use a custom getter.
+        Object.defineProperty(navigator, 'plugins', {
+            get: function() {
+                return [
+                    {
+                        0: {type: "application/x-google-chrome-pdf", suffixes: "pdf", description: "Portable Document Format", enabledPlugin: Plugin},
+                        description: "Portable Document Format",
+                        filename: "internal-pdf-viewer",
+                        length: 1,
+                        name: "Chrome PDF Plugin"
+                    }
+                ];
+            }
+        });
+        
+        // Overwrite the `chrome` object to avoid detection
+        window.chrome = {
+            runtime: {},
+            loadTimes: function() {},
+            csi: function() {},
+            app: {}
+        };
+        
+        // Mock permissions
+        const originalQuery = window.navigator.permissions.query;
+        window.navigator.permissions.query = (parameters) => (
+            parameters.name === 'notifications' ?
+                Promise.resolve({ state: Notification.permission }) :
+                originalQuery(parameters)
+        );
+        
+        // Hide automation indicators
+        delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+        delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+        delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+    """)
+    
+    context.set_default_timeout(30000)  # Increased timeout for better stability
     return context
+
+
+def add_random_mouse_movements(page):
+    """
+    Add random mouse movements to simulate human behavior
+    """
+    try:
+        # Get viewport dimensions
+        viewport = page.viewport_size
+        width, height = viewport['width'], viewport['height']
+        
+        # Perform 2-4 random mouse movements
+        movements = random.randint(2, 4)
+        for _ in range(movements):
+            x = random.randint(100, width - 100)
+            y = random.randint(100, height - 100)
+            page.mouse.move(x, y)
+            time.sleep(random.uniform(0.1, 0.3))
+    except Exception as e:
+        logging.debug(f"Random mouse movement failed: {e}")
+
+
+def simulate_human_scroll(page, element_selector=None):
+    """
+    Simulate human-like scrolling behavior
+    """
+    try:
+        if element_selector:
+            element = page.query_selector(element_selector)
+            if element:
+                # Scroll to element first
+                element.scroll_into_view_if_needed()
+                time.sleep(random.uniform(0.2, 0.5))
+        
+        # Random small scrolls to simulate reading
+        scroll_steps = random.randint(2, 5)
+        for _ in range(scroll_steps):
+            # Small random scroll amounts
+            scroll_delta = random.randint(100, 300)
+            page.mouse.wheel(0, scroll_delta)
+            time.sleep(random.uniform(0.3, 0.8))
+            
+            # Occasionally scroll back up a bit (like humans do)
+            if random.random() < 0.3:
+                page.mouse.wheel(0, -random.randint(50, 150))
+                time.sleep(random.uniform(0.2, 0.4))
+                
+    except Exception as e:
+        logging.debug(f"Human scroll simulation failed: {e}")
+
+
+def simulate_human_typing(page, selector, text, clear_first=True):
+    """
+    Simulate human-like typing with realistic delays and occasional typos
+    """
+    try:
+        element = page.query_selector(selector)
+        if not element:
+            return False
+            
+        element.click()
+        time.sleep(random.uniform(0.2, 0.5))
+        
+        if clear_first:
+            # Clear existing text
+            element.fill("")
+            time.sleep(random.uniform(0.1, 0.3))
+        
+        # Type character by character with human-like delays
+        for i, char in enumerate(text):
+            # Occasionally make a "typo" and correct it
+            if random.random() < 0.02 and i > 2:  # 2% chance of typo
+                wrong_char = random.choice('abcdefghijklmnopqrstuvwxyz')
+                element.type(wrong_char)
+                time.sleep(random.uniform(0.1, 0.3))
+                # Backspace to correct
+                element.press('Backspace')
+                time.sleep(random.uniform(0.1, 0.3))
+            
+            # Type the correct character
+            element.type(char)
+            
+            # Human-like typing speed variations
+            if char == ' ':
+                time.sleep(random.uniform(0.1, 0.3))  # Longer pause after spaces
+            elif char in '.,!?':
+                time.sleep(random.uniform(0.2, 0.4))  # Pause after punctuation
+            else:
+                time.sleep(random.uniform(0.05, 0.15))  # Normal typing
+                
+        return True
+    except Exception as e:
+        logging.debug(f"Human typing simulation failed: {e}")
+        return False
+
+
+def random_delay(min_seconds=1.0, max_seconds=3.0):
+    """
+    Random delay with human-like patterns
+    """
+    delay = random.uniform(min_seconds, max_seconds)
+    logging.debug(f"Random delay: {delay:.2f} seconds")
+    time.sleep(delay)
 
 
 def nap(secs=None):
@@ -433,43 +687,53 @@ def perform_new_search(page, search_term, is_today=False, timing_config=None):
             'input[name="q"]',
             'input[title*="Search"]',
             'input[aria-label*="Search"]',
-            '[role="searchbox"]'
-        ]
+            '[role="searchbox"]'        ]
         
         search_input = None
+        selected_selector = None
         for selector in search_selectors:
             search_input = page.query_selector(selector)
             if search_input:
+                selected_selector = selector
                 logging.info(f"Found search input using selector: {selector}")
                 break
         
-        if search_input:            # Ensure the search input is visible and focused
+        if search_input:
+            # Add random mouse movements before interacting
+            add_random_mouse_movements(page)
+            
+            # Ensure the search input is visible and focused
             search_input.scroll_into_view_if_needed()
-            search_input.click()
-            # Brief pause to ensure focus
-            if timing_config:
-                nap(timing_config['job_click_delay'])
-            else:
-                nap(1)  # fallback if no timing config
+            time.sleep(random.uniform(0.2, 0.5))  # Human-like pause
             
-            # Clear existing content and type new search term
-            page.keyboard.press("Control+a")  # Select all
-            page.keyboard.press("Delete")     # Delete selected content
-            nap(0.5)  # Keep short delay for keyboard operations
+            # Use human-like typing instead of direct input
+            success = simulate_human_typing(page, selected_selector, search_term, clear_first=True)
+            if not success:
+                # Fallback to original method
+                search_input.click()
+                if timing_config:
+                    nap(timing_config['job_click_delay'])
+                else:
+                    nap(1)
+                
+                # Clear existing content and type new search term
+                page.keyboard.press("Control+a")
+                page.keyboard.press("Delete")
+                nap(0.5)
+                page.keyboard.type(search_term, delay=50)
             
-            # Type the new search term
-            page.keyboard.type(search_term, delay=50)  # Add slight delay between keystrokes
-            # Brief pause after typing
-            if timing_config:
-                nap(timing_config['job_click_delay'])
-            else:
-                nap(1)  # fallback if no timing config
+            # Random delay before submitting
+            random_delay(0.5, 1.5)
             
             # Submit the search
             page.keyboard.press("Enter")
             
             # Wait for the page to load and jobs to appear
             page.wait_for_load_state('domcontentloaded')
+            
+            # Add some human-like scrolling after search
+            simulate_human_scroll(page)
+            
             # Wait for search results to load
             if timing_config:
                 nap(random.randint(timing_config['search_delay_min'], timing_config['search_delay_max']))
@@ -709,6 +973,7 @@ def main():
         logging.error("No valid search terms provided")
         exit(1)
 
+    logging.info(f"🤖 STEALTH MODE: Browser configured with anti-detection measures")
     logging.info(f"Will scrape for {len(search_terms)} search terms: {search_terms}")
     logging.info(f"Maximum jobs per search term: {args.limit}")
     logging.info(f"Timing config: {timing_config}")
@@ -717,13 +982,22 @@ def main():
     context = create_browser_context()
     page = context.new_page()
 
-    try:        # Start with the first search term
+    try:
+        # Start with the first search term
         first_search_term = search_terms[0]
         search_page_url = GJOBS_URL.format(first_search_term)
         if args.is_today:
             search_page_url += GJOBS_URL_TODAY_SUBSTRING
+        
+        logging.info(f"🔍 Navigating to Google Jobs with stealth techniques...")
         # Navigate to the first search
         page.goto(search_page_url)
+        
+        # Add human-like behavior after page load
+        logging.info("🎭 Simulating human behavior...")
+        add_random_mouse_movements(page)
+        simulate_human_scroll(page)
+        random_delay(1.0, 3.0)  # Random delay to look more human
         handle_cookie_consent(page, timing_config)
           # Scrape all search terms with correct limit and timing
         all_jobs = scrape_multiple_search_terms(
