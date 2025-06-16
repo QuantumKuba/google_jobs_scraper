@@ -67,7 +67,7 @@ def nap(secs=None):
     time.sleep(secs)
 
 
-def get_jobs(page, search_term, all_scraped_jobs, scraped_urls, cap, timing_config=None):
+def get_jobs(page, search_term, all_scraped_jobs, scraped_urls, cap, timing_config=None, output_file=None):
     if timing_config is None:
         timing_config = {
             'job_click_delay': 1.0,
@@ -109,10 +109,9 @@ def get_jobs(page, search_term, all_scraped_jobs, scraped_urls, cap, timing_conf
             try:
                 # Click the job card to reveal its details
                 scroll_element_into_view_and_click(card)
-                
-                # Give the page a moment to process the click with configurable delay
+                  # Give the page a moment to process the click with configurable delay
                 nap(timing_config['job_click_delay'])
-                  # Wait for the job description card to be visible with increased timeout
+                # Wait for the job description card to be visible with increased timeout
                 try:
                     page.wait_for_selector(css_selector.job_desc_card_visible, state='visible', timeout=10000)
                 except Exception as wait_error:
@@ -136,6 +135,10 @@ def get_jobs(page, search_term, all_scraped_jobs, scraped_urls, cap, timing_conf
                         all_scraped_jobs.append(job_data)
                         scraped_urls.add(job_url)
                         logging.info(f"Successfully scraped job {len(current_search_jobs)} for '{search_term}': {job_data.get('job_title')}")
+                        
+                        # Save the job immediately to the file
+                        if output_file:
+                            save_job_immediately(job_data, output_file)
                     else:
                         logging.info(f"Skipping duplicate job: {job_data.get('job_title')}")
                 elif job_data:
@@ -146,6 +149,10 @@ def get_jobs(page, search_term, all_scraped_jobs, scraped_urls, cap, timing_conf
                         all_scraped_jobs.append(job_data)
                         scraped_urls.add(unique_id)
                         logging.info(f"Successfully scraped job {len(current_search_jobs)} for '{search_term}': {job_data.get('job_title')}")
+                        
+                        # Save the job immediately to the file
+                        if output_file:
+                            save_job_immediately(job_data, output_file)
 
             except Exception as e:
                 logging.error(f"Error processing job card {i}: {e}")
@@ -271,7 +278,68 @@ def scrape_job(timekeeper, desc_card, search_term):
     return job_data
 
 
-
+def save_job_immediately(job_data, filename):
+    """
+    Save a single job immediately to the JSON file
+    """
+    try:
+        # Load existing data
+        existing_data = []
+        existing_urls = set()
+        
+        if os.path.exists(filename):
+            try:
+                with open(filename, 'r') as f:
+                    file_data = json.load(f)
+                    if isinstance(file_data, dict) and 'jobs' in file_data:
+                        existing_data = file_data['jobs']
+                    elif isinstance(file_data, list):
+                        existing_data = file_data
+                    
+                    # Track existing URLs to prevent duplicates - use same logic as main scraping
+                    for job in existing_data:
+                        if job.get("application_links"):
+                            job_url = job["application_links"][0]["url"]
+                            existing_urls.add(job_url)
+                        else:
+                            # Use fallback unique ID
+                            unique_id = f"{job.get('job_title')}-{job.get('publisher')}"
+                            existing_urls.add(unique_id)
+                            
+            except (json.JSONDecodeError, FileNotFoundError):
+                existing_data = []
+                existing_urls = set()
+        
+        # Check if this job already exists using same logic as main scraping
+        job_identifier = None
+        if job_data.get("application_links"):
+            job_identifier = job_data["application_links"][0]["url"]
+        else:
+            job_identifier = f"{job_data.get('job_title')}-{job_data.get('publisher')}"
+            
+        if job_identifier in existing_urls:
+            return False  # Job already exists, don't add it
+        
+        # Add the new job
+        existing_data.append(job_data)
+        
+        # Create output data structure
+        output_data = {
+            "scrape_timestamp": datetime.datetime.now().isoformat(),
+            "total_jobs": len(existing_data),
+            "jobs": existing_data
+        }
+        
+        # Save to file
+        with open(filename, 'w') as f:
+            json.dump(output_data, f, indent=4)
+        
+        logging.info(f"✅ Saved job immediately: {job_data.get('job_title')} (Total: {len(existing_data)} jobs)")
+        return True  # Job was added successfully
+        
+    except Exception as e:
+        logging.error(f"Error saving job immediately to file: {e}")
+        return False
 
 
 def parse_search_terms(search_terms_input):
@@ -500,7 +568,7 @@ def save_results_to_file(all_jobs, filename):
         logging.error(f"Error saving results to file: {e}")
 
 
-def scrape_multiple_search_terms(page, search_terms, is_today=False, cap=50, timing_config=None):
+def scrape_multiple_search_terms(page, search_terms, is_today=False, cap=50, timing_config=None, output_file=None):
     """
     Scrape jobs for multiple search terms in the same browser session
     """
@@ -528,9 +596,8 @@ def scrape_multiple_search_terms(page, search_terms, is_today=False, cap=50, tim
                 
                 page.goto(search_page_url)
                 handle_cookie_consent(page, timing_config)
-        
-        # Scrape jobs for current search term
-        current_jobs = get_jobs(page, search_term, all_scraped_jobs, scraped_urls, cap, timing_config)
+          # Scrape jobs for current search term
+        current_jobs = get_jobs(page, search_term, all_scraped_jobs, scraped_urls, cap, timing_config, output_file)
         logging.info(f"Scraped {len(current_jobs)} jobs for search term: '{search_term}'")
         
         # Small delay between searches to avoid being too aggressive
@@ -658,13 +725,13 @@ def main():
         # Navigate to the first search
         page.goto(search_page_url)
         handle_cookie_consent(page, timing_config)
-        
-        # Scrape all search terms with correct limit and timing
+          # Scrape all search terms with correct limit and timing
         all_jobs = scrape_multiple_search_terms(
-            page, search_terms, args.is_today, args.limit, timing_config
+            page, search_terms, args.is_today, args.limit, timing_config, args.output_file
         )
         
-        # Save results
+        # Note: Jobs are now saved immediately as they're scraped
+        # The final save_results_to_file call ensures metadata is updated
         save_results_to_file(all_jobs, args.output_file)
         
         logging.info(f"Scraping completed! Total jobs scraped: {len(all_jobs)}")
