@@ -271,13 +271,7 @@ def scrape_job(timekeeper, desc_card, search_term):
     return job_data
 
 
-def format_city_state(city_state):
-    if city_state:
-        city, state = city_state.split(",")
-        city = city.strip().replace(" ", "+")
-        state = state.strip().replace(" ", "+")
-        return f"&htichips=city;{city}_comma_%20{state}"
-    return ""
+
 
 
 def parse_search_terms(search_terms_input):
@@ -357,7 +351,7 @@ def expand_jobspy_search_terms(search_input):
     return final_terms
 
 
-def perform_new_search(page, search_term, is_today=False, city_state=None, timing_config=None):
+def perform_new_search(page, search_term, is_today=False, timing_config=None):
     """
     Perform a new search by typing in the search box instead of navigating to a new URL
     This helps bypass CAPTCHA by keeping the same browser session
@@ -506,7 +500,7 @@ def save_results_to_file(all_jobs, filename):
         logging.error(f"Error saving results to file: {e}")
 
 
-def scrape_multiple_search_terms(page, search_terms, is_today=False, city_state=None, cap=50, timing_config=None):
+def scrape_multiple_search_terms(page, search_terms, is_today=False, cap=50, timing_config=None):
     """
     Scrape jobs for multiple search terms in the same browser session
     """
@@ -524,17 +518,13 @@ def scrape_multiple_search_terms(page, search_terms, is_today=False, city_state=
     
     for i, search_term in enumerate(search_terms):
         logging.info(f"Starting search {i+1}/{len(search_terms)}: '{search_term}'")
-        
-        # Perform new search (except for the first one which is already loaded)
+          # Perform new search (except for the first one which is already loaded)
         if i > 0:
-            success = perform_new_search(page, search_term, is_today, city_state, timing_config)
+            success = perform_new_search(page, search_term, is_today, timing_config)
             if not success:                # Fallback to URL navigation if search input method fails
                 search_page_url = GJOBS_URL.format(search_term)
                 if is_today:
                     search_page_url += GJOBS_URL_TODAY_SUBSTRING
-                if city_state:
-                    city_state_substring = format_city_state(city_state)
-                    search_page_url += city_state_substring
                 
                 page.goto(search_page_url)
                 handle_cookie_consent(page, timing_config)
@@ -589,11 +579,6 @@ def main():
         "--is_today",
         action="store_true",
         help="Set this flag to only scrape jobs posted today",
-    )
-    parser.add_argument(
-        "--city_state",
-        type=str,
-        help="City and state for job search, formatted as 'City,State' (e.g., 'New York,NY')",
     )
     parser.add_argument(
         "--output_file",
@@ -665,21 +650,18 @@ def main():
     context = create_browser_context()
     page = context.new_page()
 
-    try:
-        # Start with the first search term
+    try:        # Start with the first search term
         first_search_term = search_terms[0]
         search_page_url = GJOBS_URL.format(first_search_term)
         if args.is_today:
             search_page_url += GJOBS_URL_TODAY_SUBSTRING
-        if args.city_state:
-            city_state_substring = format_city_state(args.city_state)
-            search_page_url += city_state_substring        # Navigate to the first search
+        # Navigate to the first search
         page.goto(search_page_url)
         handle_cookie_consent(page, timing_config)
         
         # Scrape all search terms with correct limit and timing
         all_jobs = scrape_multiple_search_terms(
-            page, search_terms, args.is_today, args.city_state, args.limit, timing_config
+            page, search_terms, args.is_today, args.limit, timing_config
         )
         
         # Save results

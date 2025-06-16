@@ -164,6 +164,29 @@ This will create searches for:
 - "software engineer javascript remote"
 - "software engineer javascript hybrid"
 
+**Location-based combinations using parentheses:**
+
+```bash
+python google_jobs.py --search_terms="(AI Engineer OR ML Engineer OR Software Engineer OR Graduate Python Developer) Manchester UK" --limit=500
+```
+
+**Multiple job titles with location variations:**
+
+```bash
+python google_jobs.py --search_terms="(Data Scientist OR Python Developer OR Backend Engineer) (London OR Birmingham OR Leeds)" --limit=400
+```
+
+This automatically creates combinations like:
+- Data Scientist London
+- Data Scientist Birmingham  
+- Data Scientist Leeds
+- Python Developer London
+- Python Developer Birmingham
+- Python Developer Leeds
+- Backend Engineer London
+- Backend Engineer Birmingham
+- Backend Engineer Leeds
+
 ### How it Works
 
 1. **CAPTCHA Bypass**: The script keeps the same browser window open throughout the entire scraping session
